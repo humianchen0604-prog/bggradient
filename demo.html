@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dissolving Gradient</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      background: #F0F0F0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 24px;
+    }
+
+    /* ── Phone frame ── */
+    .phone {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      background: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    /* ── Dissolving gradient ── */
+    .gradient-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 460px;
+      pointer-events: none;
+      z-index: 2;
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 176, 190, 1) 0%,
+        rgba(155, 212, 255, 0.51) 62.5%,
+        rgba(255, 203, 255, 0) 100%
+      );
+    }
+    .gradient-layer.animating {
+      animation: fadeOutGradient var(--duration) ease-in-out var(--delay) forwards;
+    }
+    @keyframes fadeOutGradient {
+      from { opacity: var(--start-opacity, 1); }
+      to   { opacity: 0; visibility: hidden; }
+    }
+
+    /* ── UI layer — always above gradient ── */
+    .ui {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+    }
+
+    /* Status bar */
+    .status-bar {
+      position: absolute;
+      top: 0; left: 0; width: 390px; height: 47px;
+    }
+    .time {
+      position: absolute;
+      left: 35px; top: 50%; transform: translateY(-50%);
+      font-size: 17px; font-weight: 600; color: #000;
+      width: 58px; text-align: center;
+    }
+    .sb-signal {
+      position: absolute; right: 84.7px;
+      top: 50%; transform: translateY(calc(-50% + 2.1px));
+      width: 21.298px; height: 12.798px;
+    }
+    .sb-connection {
+      position: absolute; right: 60.32px;
+      top: 50%; transform: translateY(calc(-50% + 2px));
+      width: 17.68px; height: 13px;
+    }
+    .sb-battery {
+      position: absolute; right: 25.57px;
+      top: 50%; transform: translateY(calc(-50% + 2.5px));
+      width: 29.432px; height: 14px;
+    }
+    .sb-signal img, .sb-connection img, .sb-battery img {
+      width: 100%; height: 100%; display: block; object-fit: contain;
+    }
+
+    /* Nav bar */
+    .nav-bar {
+      position: absolute;
+      top: 47px; left: 0; width: 390px; height: 44px;
+      display: flex; align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+    }
+    .nav-btn {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .nav-btn img { width: 24px; height: 24px; object-fit: contain; }
+
+    /* ── Small Logo content ── */
+    .small-logo { display: block; }
+    .heading {
+      position: absolute;
+      left: 35px; top: 195px; width: 320px;
+      font-size: 50.088px; font-weight: 800;
+      font-style: italic; line-height: 1.09; color: #000;
+    }
+    .tiktok-logo-small {
+      position: absolute;
+      left: 138.94px; top: 312.75px;
+      width: 33.074px; height: 37.459px;
+      object-fit: contain;
+    }
+
+    /* ── Big Logo content ── */
+    .big-logo { display: none; }
+    .big-logo-upper {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      top: 171px; width: 340px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 24px;
+    }
+    .tiktok-logo-big {
+      width: 60px; height: 60px;
+      object-fit: contain; flex-shrink: 0;
+    }
+    .big-heading {
+      font-size: 36px; font-weight: 700;
+      line-height: 1.2; color: #000;
+      text-align: center; width: 100%;
+    }
+
+    /* Input section */
+    .input-section {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      top: 389px; width: 320px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .input-box {
+      height: 56px;
+      border-radius: 999px;
+      border: 0.5px solid rgba(0, 0, 0, 0.05);
+      background: #ffffff;
+      display: flex; align-items: center;
+      padding: 4px 18px;
+    }
+    .input-box.animating {
+      animation: inputFill var(--duration) ease-in-out var(--delay) forwards;
+    }
+    @keyframes inputFill {
+      from { background: #ffffff; border-color: rgba(0, 0, 0, 0.05); }
+      to   { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.12); }
+    }
+    .ph {
+      font-size: 17px;
+      color: rgba(0, 0, 0, 0.34);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .login-btn {
+      height: 56px; border-radius: 999px;
+      background: #000; color: #fff; border: none;
+      font-size: 17px; font-weight: 700; width: 100%;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* Social buttons */
+    .social-btn {
+      position: absolute; top: 621.79px;
+      width: 56px; height: 56px; border-radius: 100px;
+      border: 0.5px solid rgba(0, 0, 0, 0.12); background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+    }
+    .social-btn img { width: 24px; height: 24px; object-fit: contain; }
+    .social-apple  { left: 92px; }
+    .social-google { left: 166.79px; }
+    .social-more   { left: 241.59px; }
+
+    /* Disclaimer */
+    .disclaimer {
+      position: absolute;
+      top: 734px; left: 0; width: 390px;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .disclaimer p {
+      font-size: 11px; line-height: 1.3;
+      color: rgba(0, 0, 0, 0.48); text-align: center; width: 282px;
+    }
+    .disclaimer a { color: #2b5db9; text-decoration: none; cursor: pointer; }
+
+    /* Home indicator */
+    .home-indicator {
+      position: absolute; bottom: 9px;
+      left: 121px; right: 120.06px;
+      height: 5px; background: #000; border-radius: 100px;
+    }
+
+    /* ── Toolbox ── */
+    aside {
+      position: fixed;
+      right: 24px; top: 50%; transform: translateY(-50%);
+      width: 288px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+      border-radius: 16px;
+      border: 1px solid rgba(203, 213, 225, 0.5);
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* Logo toggle */
+    .logo-toggle {
+      display: flex;
+      background: rgba(0, 0, 0, 0.06);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .toggle-opt {
+      flex: 1;
+      height: 30px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      font-size: 12px; font-weight: 500;
+      color: rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-family: inherit;
+    }
+    .toggle-opt.active {
+      background: #fff;
+      color: #000;
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Toolbox header row */
+    .toolbox-header { display: flex; align-items: center; justify-content: space-between; }
+    .toolbox-title  { display: flex; align-items: center; gap: 8px; color: #1e293b; }
+    .toolbox-title svg { width: 20px; height: 20px; }
+    .toolbox-title h2 {
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .replay-btn {
+      padding: 6px; background: none; border: none;
+      border-radius: 8px; color: #64748b;
+      cursor: pointer; display: flex; align-items: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .replay-btn:hover { background: rgba(241, 245, 249, 0.8); color: #1e293b; }
+    .replay-btn svg { width: 16px; height: 16px; }
+
+    /* Controls */
+    .controls { display: flex; flex-direction: column; gap: 20px; }
+    .control  { display: flex; flex-direction: column; gap: 12px; }
+    .control-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; font-weight: 500; color: #64748b;
+    }
+    .control-label span { color: #334155; font-variant-numeric: tabular-nums; }
+    input[type="range"] {
+      width: 100%; height: 6px;
+      appearance: none; -webkit-appearance: none;
+      background: #e2e8f0; border-radius: 9999px;
+      cursor: pointer; accent-color: #1e293b;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%; background: #1e293b; cursor: pointer;
+    }
+
+    /* Start button */
+    .start-btn {
+      height: 44px; border-radius: 999px;
+      background: #000; color: #fff; border: none;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      letter-spacing: 0.03em;
+      transition: background 0.2s;
+    }
+    .start-btn:hover:not(:disabled) { opacity: 0.75; }
+    .start-btn:disabled {
+      background: rgba(0, 0, 0, 0.15);
+      color: rgba(255, 255, 255, 0.6);
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- Phone frame -->
+  <div class="phone">
+
+    <!-- Dissolving gradient layer -->
+    <div class="gradient-layer" id="gradient"></div>
+
+    <!-- UI (always above gradient) -->
+    <div class="ui">
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span class="time">8:00</span>
+        <div class="sb-signal"><img src="System/Signal.png" alt="" /></div>
+        <div class="sb-connection"><img src="System/Connection.png" alt="" /></div>
+        <div class="sb-battery"><img src="System/Battery.png" alt="" /></div>
+      </div>
+
+      <!-- Nav bar -->
+      <div class="nav-bar">
+        <button class="nav-btn"><img src="Quesionmark.png" alt="" /></button>
+      </div>
+
+      <!-- Small Logo content -->
+      <div class="small-logo">
+        <p class="heading">Scroll into something new</p>
+        <img class="tiktok-logo-small" src="TikTok_logo.png" alt="" />
+      </div>
+
+      <!-- Big Logo content -->
+      <div class="big-logo">
+        <div class="big-logo-upper">
+          <img class="tiktok-logo-big" src="TikTok_logo.png" alt="" />
+          <p class="big-heading">Create What You Imagine</p>
+        </div>
+      </div>
+
+      <!-- Input section (shared) -->
+      <div class="input-section">
+        <div class="input-box" id="inputBox">
+          <span class="ph">Phone number, email or username</span>
+        </div>
+        <button class="login-btn">Login or Signup</button>
+      </div>
+
+      <!-- Social buttons -->
+      <button class="social-btn social-apple"><img src="Apple.png" alt="Apple" /></button>
+      <button class="social-btn social-google"><img src="Google.png" alt="Google" /></button>
+      <button class="social-btn social-more"><img src="More.png" alt="More" /></button>
+
+      <!-- Disclaimer -->
+      <div class="disclaimer">
+        <p>By signing up, you agree to our <a>Terms of Service</a> and acknowledge that you have read our <a>Privacy Policy</a>.</p>
+      </div>
+
+      <!-- Home indicator -->
+      <div class="home-indicator"></div>
+
+    </div>
+  </div>
+
+  <!-- Toolbox -->
+  <aside>
+
+    <!-- Logo mode toggle -->
+    <div class="logo-toggle">
+      <button class="toggle-opt active" data-mode="small">Small Logo</button>
+      <button class="toggle-opt" data-mode="big">Big Logo</button>
+    </div>
+
+    <!-- Header -->
+    <div class="toolbox-header">
+      <div class="toolbox-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <h2>Toolbox</h2>
+      </div>
+      <button class="replay-btn" id="replayBtn" title="Replay Animation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Sliders -->
+    <div class="controls">
+      <div class="control">
+        <div class="control-label">
+          <label for="duration">Fadeout Timer</label>
+          <span id="durationVal">3s</span>
+        </div>
+        <input type="range" id="duration" min="0" max="10" step="0.5" value="3" />
+      </div>
+      <div class="control">
+        <div class="control-label">
+          <label for="delay">Auto Delay Timing</label>
+          <span id="delayVal">0s</span>
+        </div>
+        <input type="range" id="delay" min="0" max="10" step="0.5" value="0" />
+      </div>
+      <div class="control">
+        <div class="control-label">
+          <label for="opacity">Base Opacity</label>
+          <span id="opacityVal">100%</span>
+        </div>
+        <input type="range" id="opacity" min="0" max="1" step="0.05" value="1" />
+      </div>
+    </div>
+
+    <button class="start-btn" id="startBtn">Start</button>
+  </aside>
+
+</div>
+<script>
+  const gradient    = document.getElementById('gradient');
+  const inputBox    = document.getElementById('inputBox');
+  const startBtn    = document.getElementById('startBtn');
+  const replayBtn   = document.getElementById('replayBtn');
+  const durationEl  = document.getElementById('duration');
+  const delayEl     = document.getElementById('delay');
+  const opacityEl   = document.getElementById('opacity');
+  const durationVal = document.getElementById('durationVal');
+  const delayVal    = document.getElementById('delayVal');
+  const opacityVal  = document.getElementById('opacityVal');
+  const smallLogo   = document.querySelector('.small-logo');
+  const bigLogo     = document.querySelector('.big-logo');
+
+  // ── Logo toggle ──
+  document.querySelectorAll('.toggle-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      smallLogo.style.display = mode === 'small' ? 'block' : 'none';
+      bigLogo.style.display   = mode === 'big'   ? 'block' : 'none';
+      resetState();
+    });
+  });
+
+  // ── Reset to pre-animation state ──
+  function resetState() {
+    gradient.classList.remove('animating');
+    inputBox.classList.remove('animating');
+    gradient.style.opacity = parseFloat(opacityEl.value);
+    clearTimeout(window._enableTimer);
+    startBtn.disabled = false;
+  }
+
+  // ── Play animation ──
+  function playAnimation() {
+    const duration = parseFloat(durationEl.value);
+    const delay    = parseFloat(delayEl.value);
+    const opacity  = parseFloat(opacityEl.value);
+
+    gradient.classList.remove('animating');
+    inputBox.classList.remove('animating');
+    gradient.style.opacity = opacity;
+    gradient.style.setProperty('--duration', `${duration}s`);
+    gradient.style.setProperty('--delay', `${delay}s`);
+    gradient.style.setProperty('--start-opacity', opacity);
+    inputBox.style.setProperty('--duration', `${duration * 0.8}s`);
+    inputBox.style.setProperty('--delay', `${delay}s`);
+
+    void gradient.offsetWidth; // force reflow
+
+    gradient.classList.add('animating');
+    inputBox.classList.add('animating');
+
+    // Disable start during animation, re-enable when done
+    startBtn.disabled = true;
+    clearTimeout(window._enableTimer);
+    window._enableTimer = setTimeout(() => {
+      startBtn.disabled = false;
+    }, (duration + delay) * 1000);
+  }
+
+  durationEl.addEventListener('input', () => { durationVal.textContent = `${durationEl.value}s`; });
+  delayEl.addEventListener('input',    () => { delayVal.textContent    = `${delayEl.value}s`; });
+  opacityEl.addEventListener('input',  () => { opacityVal.textContent  = `${Math.round(opacityEl.value * 100)}%`; });
+
+  startBtn.addEventListener('click', playAnimation);
+  replayBtn.addEventListener('click', playAnimation);
+</script>
+</body>
+</html>
