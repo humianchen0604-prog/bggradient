@@ -21,7 +21,7 @@ export default function App() {
             key={key}
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'linear-gradient(to bottom, rgba(255, 176, 190, 1) 0%, rgba(155, 212, 255, 0.51) 63%, rgba(255, 203, 255, 0) 100%)',
+              background: 'linear-gradient(to bottom, #ffb0be 0%, rgba(155, 212, 255, 0.51) 62.5%, rgba(255, 203, 255, 0) 100%)',
               animation: `fadeOutGradient ${duration}s ease-in-out ${delay}s forwards`,
               opacity: opacity,
               '--start-opacity': opacity,
